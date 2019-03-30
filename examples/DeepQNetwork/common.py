@@ -8,6 +8,8 @@ import random
 import time
 from six.moves import queue
 from tqdm import tqdm
+import collections
+import pickle
 
 from tensorpack.callbacks import Callback
 from tensorpack.utils import logger
@@ -15,6 +17,7 @@ from tensorpack.utils.concurrency import ShareSessionThread, StoppableThread
 from tensorpack.utils.stats import StatCounter
 from tensorpack.utils.utils import get_tqdm_kwargs
 
+steps_buffer = collections.deque(maxlen=10)
 
 def play_one_episode(env, func, render=False):
     def predict(s):
@@ -33,6 +36,19 @@ def play_one_episode(env, func, render=False):
     while True:
         act = predict(ob)
         ob, r, isOver, info = env.step(act)
+
+        input_vec = [act, r, ob]
+        steps_buffer.append(input_vec)
+        if (r > 0):
+            print("point ! writing in file successful combo")
+
+            with open('demofile.pickle', 'ab') as handle:
+                try:
+                    while True:
+                        pickle.dump(steps_buffer.pop(), handle, protocol=pickle.HIGHEST_PROTOCOL)
+                except IndexError:
+                    break
+
         if render:
             env.render()
         sum_r += r
@@ -43,6 +59,7 @@ def play_one_episode(env, func, render=False):
 def play_n_episodes(player, predfunc, nr, render=False):
     logger.info("Start Playing ... ")
     for k in range(nr):
+        steps_buffer = collections.deque(maxlen=10)
         score = play_one_episode(player, predfunc, render=render)
         print("{}/{}, score={}".format(k, nr, score))
 
