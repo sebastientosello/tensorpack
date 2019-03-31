@@ -17,7 +17,8 @@ from tensorpack.utils.concurrency import ShareSessionThread, StoppableThread
 from tensorpack.utils.stats import StatCounter
 from tensorpack.utils.utils import get_tqdm_kwargs
 
-steps_buffer = collections.deque(maxlen=10)
+STEPSIZE = 10
+steps_buffer = collections.deque(maxlen=STEPSIZE)
 
 def play_one_episode(env, func, render=False):
     def predict(s):
@@ -39,13 +40,13 @@ def play_one_episode(env, func, render=False):
 
         input_vec = [act, r, ob]
         steps_buffer.append(input_vec)
-        if (r > 0):
-            print("point ! writing in file successful combo")
+        if (r != 0):
+            print("point ! writing in file successful combo for a player")
 
             with open('demofile.pickle', 'ab') as handle:
                 try:
-                    while True:
-                        pickle.dump(steps_buffer.pop(), handle, protocol=pickle.HIGHEST_PROTOCOL)
+                    pickle.dump(steps_buffer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                    steps_buffer.clear()
                 except IndexError:
                     break
 
